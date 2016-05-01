@@ -1,17 +1,14 @@
 'use strict';
 /* Global variables */
-var players = [
+var playerSprites = [
         'images/char-boy.png',
         'images/char-cat-girl.png',
         'images/char-horn-girl.png',
         'images/char-pink-girl.png',
         'images/char-princess-girl.png'
     ],
-
-SCORE = 0,
-LIVES = 3,
-GAMESTARTED = false,
-GAMEENDED = false,
+gameStarted = false,
+gameEnded = false,
 
 // Create enemy objects.
 createEnemies = function() {
@@ -28,13 +25,26 @@ createEnemies = function() {
     return enemies;
 },
 
+//To display different types of players at the bottom of the canvas.
+displayPlayers = function() {
+    var x = 5;
+    playerSprites.forEach(function(playerSprite) {
+        ctx.drawImage(Resources.get(playerSprite), x, 535, 40, 75);
+        x += 40;	
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "black";
+        ctx.fillText("LIVES:" + player.lives, 210, 590);
+        ctx.fillText("SCORE:" + player.score, 290, 590);
+    });
+},
+
 //Display gems at random positions
 displayGems = function() {
     var gems = [];
     var factor = 150;
     for (var i = 0; i < 3; i++) {
-        gems.push(new Gems(Math.floor(Math.random() * (factor - (factor - 150)) + (factor - 150)), Math.floor(Math.random() * (250 - 60) + 100)));
-        gems.push(new Gems(Math.floor(Math.random() * (factor - (factor - 150)) + (factor - 150)), Math.floor(Math.random() * (250 - 60) + 100)));
+        gems.push(new Gem(Math.floor(Math.random() * (factor - (factor - 150)) + (factor - 150)), Math.floor(Math.random() * (250 - 60) + 100)));
+        gems.push(new Gem(Math.floor(Math.random() * (factor - (factor - 150)) + (factor - 150)), Math.floor(Math.random() * (250 - 60) + 100)));
         factor += 160;
     }
     return gems;
@@ -59,12 +69,12 @@ var Enemy = function(x, y, speed) {
 
 // Update the enemy's position, required method for game
 // Parameter: dt, a time delta between ticks
-Enemy.prototype.update = function(dt) {
+Enemy.prototype.update = function(dt, player, enemyWrapLimit) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
     // all computers.
     var canvas = document.getElementById("mycanvas");
-    if (this.x >= canvas.clientWidth + 250) {
+    if (this.x >= enemyWrapLimit) {
         this.resetEnemy();
     }
 
@@ -78,7 +88,7 @@ Enemy.prototype.checkForCollision = function(player) {
     if (!((this.x > player.x + 50) || (this.y < player.y - 87.5) || (player.x > this.x + 50) || (player.y < this.y - 87.5))) {
         player.x = 0;
         player.y = 420;
-        LIVES -= 1;
+        player.lives -= 1;
     }
     return true;
 };
@@ -95,31 +105,31 @@ Enemy.prototype.render = function() {
 };
 
 /* Function to draw the gems on the canvas */
-var Gems = function(x, y) {
+var Gem = function(x, y) {
     this.sprite = 'images/Star.png';
     this.x = x;
     this.y = y;
 };
 
 /* Function to collect gems by the player */
-Gems.prototype.collectGem = function(player) {
+Gem.prototype.collectGem = function(player) {
     if (!((this.x - 25 > player.x + 50) || (this.y < player.y) || (player.x > this.x + 25) || (player.y + 87.5 < this.y - 50))) {
         var index = gems.indexOf(this);
         if (index > -1) {
             gems.splice(index, 1);
-            SCORE += 100;
+            player.score += 100;
         }
     }
 
 };
 
 // Function call to collect gems by the player
-Gems.prototype.update = function(dt) {
+Gem.prototype.update = function(dt) {
     this.collectGem(player);
 };
 
 // Render function helps to draw gems on the canvas.
-Gems.prototype.render = function() {
+Gem.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y, 50, 100);
 };
 
@@ -135,58 +145,44 @@ var Player = function() {
     this.sprite = 'images/char-boy.png';
     this.x = 0;
     this.y = 420;
+	this.lives = 3;
+	this.score = 0;
 };
 
 player = new Player();
 
-//To display different types of players at the bottom of the canvas.
-Player.displayPlayers = function(player) {
-    var x = 5;
-    players.forEach(function(player) {
-        ctx.drawImage(Resources.get(player), x, 535, 40, 75);
-        x += 40;	
-        ctx.font = "20px Arial";
-        ctx.fillStyle = "black";
-        ctx.fillText("LIVES:" + LIVES, 210, 590);
-        ctx.fillText("SCORE:" + SCORE, 290, 590);
-    });
-};
-
 // Update the player's position, required method for game
 // Parameter: dt, a time delta between ticks
-Player.prototype.update = function(dt) {
-	var $this = this;
-    // To display different players on the board at different positions.
-    var canvas = document.getElementById("mycanvas");
-    canvas.addEventListener("mouseup", function(e) {
-        if (!GAMESTARTED && !GAMEENDED) {
-            var rect = canvas.getBoundingClientRect();
-            var x = e.clientX - rect.left;
-            var y = e.clientY - rect.top;
-            if ((x >= 5 && x <= 45) && (y >= 563 && y <= 605)) {
-                $this.sprite = "images/char-boy.png";
-                $this.render();
-            } else if ((x >= 45 && x <= 85) && (y >= 563 && y <= 605)) {
-                $this.sprite = "images/char-cat-girl.png";
-                $this.render();
-            } else if ((x >= 85 && x <= 125) && (y >= 563 && y <= 605)) {
-                $this.sprite = "images/char-horn-girl.png";
-                $this.render();
-            } else if ((x >= 125 && x <= 165) && (y >= 563 && y <= 605)) {
-                $this.sprite = "images/char-pink-girl.png";
-                $this.render();
-            } else if ((x >= 165 && x <= 205) && (y >= 563 && y <= 605)) {
-                $this.sprite = "images/char-princess-girl.png";
-                $this.render();
-            }
-        }
-    }, false);
+Player.prototype.update = function(canvas, e) {
+	if (!gameStarted && !gameEnded) {
+		var rect = canvas.getBoundingClientRect();
+		var x = e.clientX - rect.left;
+		var y = e.clientY - rect.top;
+		var firstImageXThreshold = 45, secondImageXThreshold = 85, thirdImageXThreshold = 125, fourthImageXThreshold = 165, fifthImageXThreshold = 205;
+		var lowerLimitYThreshold = 563, upperLimitYThreshold = 605;
+		if ((x >= 5 && x <= firstImageXThreshold) && (y >= lowerLimitYThreshold && y <= upperLimitYThreshold)) {
+			this.sprite = "images/char-boy.png";
+			this.render();
+		} else if ((x >= firstImageXThreshold && x <= secondImageXThreshold) && (y >= lowerLimitYThreshold && y <= upperLimitYThreshold)) {
+			this.sprite = "images/char-cat-girl.png";
+			this.render();
+		} else if ((x >= secondImageXThreshold && x <= thirdImageXThreshold) && (y >= lowerLimitYThreshold && y <= upperLimitYThreshold)) {
+			this.sprite = "images/char-horn-girl.png";
+			this.render();
+		} else if ((x >= thirdImageXThreshold && x <= fourthImageXThreshold) && (y >= lowerLimitYThreshold && y <= upperLimitYThreshold)) {
+			this.sprite = "images/char-pink-girl.png";
+			this.render();
+		} else if ((x >= fourthImageXThreshold && x <= fifthImageXThreshold) && (y >= lowerLimitYThreshold && y <= upperLimitYThreshold)) {
+			this.sprite = "images/char-princess-girl.png";
+			this.render();
+		}
+	}
 };
 
 // Draw the player on the screen, required method for game
 Player.prototype.render = function() {
-    if (player.x > 0 || player.y < 420) {
-        GAMESTARTED = true;
+    if (this.x > 0 || this.y < 420) {
+        gameStarted = true;
     }
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y, 100, 175);
 

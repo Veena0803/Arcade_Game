@@ -47,8 +47,10 @@ var Engine = (function(global) {
         /* Call our update/render functions, pass along the time delta to
          * our update function since it may be used for smooth animation.
          */
-        update(dt);
+        update(dt, player);
         render();
+
+        addClickListener();
 
         /* Set our lastTime variable which is used to determine the time delta
          * for the next time this function is called.
@@ -62,16 +64,25 @@ var Engine = (function(global) {
 
         /* Logic for messages to be printed */
 
-        if (LIVES === 0 || (player.y === 0)) {
+        if (player.lives === 0 || (player.y === 0)) {
             win.cancelAnimationFrame(game);
-            if (LIVES === 0) {
+            if (player.lives === 0) {
                 showGameOverMessage("GAME OVER!", 60, 300);
             } else {
                 showGameWonMessage();
             }
-            GAMEENDED = true;
+            gameEnded = true;
         }
     }
+
+    function addClickListener() {
+        // To display different players on the board at different positions.
+        var canvas = document.getElementById("mycanvas");
+        canvas.addEventListener("mouseup", function(e) {
+            player.update(this, e);
+        }, false);
+    }
+
 
     /* Function call and styling for printing the messages once game is over or time up */
 
@@ -123,7 +134,7 @@ var Engine = (function(global) {
             minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
             secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
 
-            if (t.total <= 0 || GAMEENDED) {
+            if (t.total <= 0 || gameEnded) {
                 clearInterval(timeinterval);
                 win.cancelAnimationFrame(game);
                 if (t.total <= 0) {
@@ -145,8 +156,8 @@ var Engine = (function(global) {
      * functionality this way (you could just implement collision detection
      * on the entities themselves within your app.js file).
      */
-    function update(dt) {
-        updateEntities(dt);
+    function update(dt, player) {
+        updateEntities(dt, player);
     }
 
     /* This is called by the update function and loops through all of the
@@ -156,11 +167,11 @@ var Engine = (function(global) {
      * the data/properties related to the object. Do your drawing in your
      * render methods.
      */
-    function updateEntities(dt) {
+    function updateEntities(dt, player) {
+        var enemyWrapLimit = canvas.clientWidth + 250;
         allEnemies.forEach(function(enemy) {
-            enemy.update(dt);
+            enemy.update(dt, player, enemyWrapLimit);
         });
-        player.update();
         gems.forEach(function(gem) {
             gem.update(dt);
         });
@@ -211,7 +222,7 @@ var Engine = (function(global) {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 560, 505, 40);
         ctx.strokeRect(0, 560, 505, 40);
-        Player.displayPlayers();
+        displayPlayers();
     }
 
     /* This function is called by the render function and is called on each game
