@@ -62,14 +62,14 @@ var Engine = (function(global) {
 
         /* Logic for messages to be printed */
 
-        if (lives === 0 || (player.y === 0)) {
+        if (LIVES === 0 || (player.y === 0)) {
             win.cancelAnimationFrame(game);
-            if (lives === 0) {
+            if (LIVES === 0) {
                 showGameOverMessage("GAME OVER!", 60, 300);
             } else {
                 showGameWonMessage();
             }
-            gameEnded = true;
+            GAMEENDED = true;
         }
     }
 
@@ -109,7 +109,7 @@ var Engine = (function(global) {
             'total': t,
             'minutes': minutes,
             'seconds': seconds
-        }
+        };
     }
 
     function initializeClock(id, endtime) {
@@ -123,7 +123,7 @@ var Engine = (function(global) {
             minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
             secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
 
-            if (t.total <= 0 || gameEnded) {
+            if (t.total <= 0 || GAMEENDED) {
                 clearInterval(timeinterval);
                 win.cancelAnimationFrame(game);
                 if (t.total <= 0) {
@@ -207,7 +207,7 @@ var Engine = (function(global) {
 
         renderEntities();
 
-        /* Rectangle to display select players, Lives, Score & Timer */
+        /* Rectangle to display select players, LIVES, Score & Timer */
         ctx.fillStyle = "white";
         ctx.fillRect(0, 560, 505, 40);
         ctx.strokeRect(0, 560, 505, 40);
